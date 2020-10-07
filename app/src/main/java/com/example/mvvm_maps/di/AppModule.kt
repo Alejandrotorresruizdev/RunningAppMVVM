@@ -17,7 +17,7 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideRunningDatabase(
+    fun providerRunningDatabase(
         @ApplicationContext app: Context
     ) = Room.databaseBuilder(
         app,
