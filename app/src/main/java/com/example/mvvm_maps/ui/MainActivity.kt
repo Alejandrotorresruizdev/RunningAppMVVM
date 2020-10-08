@@ -1,6 +1,7 @@
 package com.example.mvvm_maps.ui
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
@@ -10,6 +11,7 @@ import com.example.mvvm_maps.db.RunDao
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import com.example.mvvm_maps.R
+import com.example.mvvm_maps.other.Constants.ACTION_SHOW_TRACKING_FRAGMENT
 import kotlinx.android.synthetic.main.activity_main.*
 
 @AndroidEntryPoint
@@ -18,6 +20,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        navigateToTrackingFragmentIfNeeded(intent)
 
         setSupportActionBar(toolbar)
         bottomNavigationView.setupWithNavController(navHostFragment.findNavController())
@@ -30,5 +34,16 @@ class MainActivity : AppCompatActivity() {
                     else -> bottomNavigationView.visibility = View.GONE
                 }
             }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        navigateToTrackingFragmentIfNeeded(intent)
+    }
+
+    private fun navigateToTrackingFragmentIfNeeded(intent:Intent?){
+        if(intent?.action == ACTION_SHOW_TRACKING_FRAGMENT){
+            navHostFragment.findNavController().navigate(R.id.action_global_trackingFragment)
+        }
     }
 }
