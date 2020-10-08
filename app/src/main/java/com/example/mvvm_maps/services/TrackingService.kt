@@ -34,18 +34,32 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.maps.model.LatLng
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import javax.inject.Inject
 
 typealias Polyline = MutableList<LatLng>
 typealias Polylines = MutableList<Polyline>
 
+@AndroidEntryPoint
 class TrackingService: LifecycleService() {
 
     var isFirstRun = true
 
+    @Inject
     lateinit var  fusedLocationProviderClient: FusedLocationProviderClient
 
+    @Inject
+    lateinit var baseNotificationBuilder : NotificationCompat.Builder
+
+    private val timeRunInSeconds = MutableLiveData<Long>()
+
     companion object {
+        val timeRunInMillis= MutableLiveData<Long>()
         val isTracking = MutableLiveData<Boolean>()
         val pathPoints = MutableLiveData<Polylines>()
     }
@@ -53,6 +67,8 @@ class TrackingService: LifecycleService() {
     private fun postInitialValues() {
         isTracking.postValue(false)
         pathPoints.postValue(mutableListOf())
+        timeRunInSeconds.postValue(0L)
+        timeRunInMillis.postValue(0L)
     }
 
     override fun onCreate() {
@@ -74,6 +90,7 @@ class TrackingService: LifecycleService() {
                         isFirstRun = false
                     }else{
                         startForegroundService()
+                        startTimer()
                         Timber.d("Resuming service...")
                     }
                 }
@@ -89,9 +106,34 @@ class TrackingService: LifecycleService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
+    private var isTimerEnabled = false
+    private var lapTime = 0L
+    private var timeRun = 0L
+    private var timeStarted = 0L
+    private var lastSecondTimestamp = 0L
 
+    private fun startTimer(){
+        addEmptyPolyline()
+        isTracking.postValue(true)
+        timeStarted = System.currentTimeMillis()
+        isTimerEnabled = true
+        CoroutineScope(Dispatchers.Main).launch {
+            while(isTracking.value!!){
+                lapTime = System.currentTimeMillis() - timeStarted
+
+                timeRunInMillis.postValue(timeRun + lapTime)
+                if(timeRunInMillis.value!! >= lastSecondTimestamp + 1000L){
+                     timeRunInSeconds.postValue(timeRunInSeconds.value!! + 1)
+                     lastSecondTimestamp += 1000L
+                }
+                delay(50L)
+            }
+            timeRun += lapTime
+        }
+    }
     private fun pauseService(){
         isTracking.postValue(false)
+        isTimerEnabled = false
     }
 
     @SuppressLint("MissingPermission")
@@ -145,12 +187,11 @@ class TrackingService: LifecycleService() {
     } ?: pathPoints.postValue(mutableListOf(mutableListOf()))
 
 
-
     private fun startForegroundService(){
 
+        startTimer()
         addEmptyPolyline()
         isTracking.postValue(true)
-
 
         val notificationManager = getSystemService((Context.NOTIFICATION_SERVICE))
             as NotificationManager
@@ -159,25 +200,8 @@ class TrackingService: LifecycleService() {
             createNotificationChannel(notificationManager)
         }
 
-        val notificationBuilder = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setAutoCancel(false)
-            .setOngoing(true)
-            .setSmallIcon(R.drawable.ic_directions_run_back_24dp)
-            .setContentTitle("Running App")
-            .setContentText("00:00:00")
-            .setContentIntent(getMainActivityPendingIntent())
-
-        startForeground(NOTIFICATION_ID,notificationBuilder.build())
+        startForeground(NOTIFICATION_ID,baseNotificationBuilder.build())
     }
-
-    private fun getMainActivityPendingIntent() = PendingIntent.getActivity(
-        this,
-        0,
-        Intent(this,MainActivity::class.java).also {
-            it.action = ACTION_SHOW_TRACKING_FRAGMENT
-        },
-        FLAG_UPDATE_CURRENT
-    )
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel(notificationManager: NotificationManager){

@@ -13,6 +13,7 @@ import com.example.mvvm_maps.other.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.example.mvvm_maps.other.Constants.MAP_ZOOM
 import com.example.mvvm_maps.other.Constants.POLYLINE_COLOR
 import com.example.mvvm_maps.other.Constants.POLYLINE_WIDTH
+import com.example.mvvm_maps.other.TrackingUtility
 import com.example.mvvm_maps.services.Polyline
 import com.example.mvvm_maps.services.TrackingService
 import com.example.mvvm_maps.ui.viewmodels.MainViewModel
@@ -22,6 +23,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.PolylineOptions
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.fragment_tracking.*
+import kotlinx.android.synthetic.main.item_run.*
 import timber.log.Timber
 
 @AndroidEntryPoint
@@ -29,11 +31,12 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking){
 
     private val viewModel : MainViewModel by viewModels()
 
-
     private var isTracking = false
     private var pathPoints = mutableListOf<Polyline>()
 
     private var map: GoogleMap? = null
+
+    private var curTimeInMillis = 0L
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -61,6 +64,12 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking){
             pathPoints = it
             addLastestPolyline()
             moveCameraToUser()
+        })
+
+        TrackingService.timeRunInMillis.observe(viewLifecycleOwner, Observer {
+            curTimeInMillis = it
+            val formattedTime = TrackingUtility.getFormattedStopWatchTime(curTimeInMillis,true)
+            tvTimer.text = formattedTime
         })
     }
     private fun toggleRun(){
