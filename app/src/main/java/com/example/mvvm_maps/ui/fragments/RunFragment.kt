@@ -17,6 +17,7 @@ import com.example.mvvm_maps.other.SortType
 import com.example.mvvm_maps.other.TrackingUtility
 import com.example.mvvm_maps.ui.viewmodels.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_run.*
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
@@ -29,10 +30,16 @@ class RunFragment : Fragment(R.layout.fragment_run), EasyPermissions.PermissionC
 
     private lateinit var runAdapter: RunAdapter
 
+    @set:Inject
+    var name = ""
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requestPermissions()
         setupRecyclerView()
+
+        val toolbarText = "Let's go, $name!"
+        requireActivity().tvToolbarTitle.text = toolbarText
 
         when(viewModel.sortType){
             SortType.DATE -> spFilter.setSelection(0)
@@ -54,7 +61,6 @@ class RunFragment : Fragment(R.layout.fragment_run), EasyPermissions.PermissionC
                     4 -> viewModel.sortRuns(SortType.CALORIES_BURNED)
                 }
             }
-
         }
         viewModel.runs.observe(viewLifecycleOwner, Observer {
             runAdapter.submitList(it)

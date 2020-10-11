@@ -35,6 +35,7 @@ import kotlinx.android.synthetic.main.fragment_tracking.*
 import kotlinx.android.synthetic.main.item_run.*
 import timber.log.Timber
 import java.lang.Math.round
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class TrackingFragment : Fragment(R.layout.fragment_tracking){
@@ -49,6 +50,9 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking){
     private var curTimeInMillis = 0L
 
     private var menu : Menu? = null
+
+    @set:Inject
+    var weight = 80f
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -202,7 +206,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking){
             } else {
                 TODO("VERSION.SDK_INT < N")
             }
-            val caloriesBurned = ((distanceInMeters / 1000f) * 80f).toInt()
+            val caloriesBurned = ((distanceInMeters / 1000f) * weight).toInt()
 
             val run = Run(bmp,dateTimeStamp,avgSpeed,distanceInMeters,curTimeInMillis,caloriesBurned)
             viewModel.insertRun(run)
