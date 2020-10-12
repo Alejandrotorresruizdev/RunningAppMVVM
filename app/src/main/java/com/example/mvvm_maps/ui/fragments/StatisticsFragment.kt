@@ -3,14 +3,20 @@ package com.example.mvvm_maps.ui.fragments
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import com.example.mvvm_maps.R
+import com.example.mvvm_maps.other.CustomMarkerView
 import com.example.mvvm_maps.other.TrackingUtility
 import com.example.mvvm_maps.ui.viewmodels.MainViewModel
 import com.example.mvvm_maps.ui.viewmodels.StatisticsViewModel
+import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.data.BarData
+import com.github.mikephil.charting.data.BarDataSet
+import com.github.mikephil.charting.data.BarEntry
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.fragment_statistics.*
 import java.lang.Math.round
@@ -23,6 +29,7 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics){
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         subscribeToObservers()
+        setupBarChart()
     }
 
     private fun setupBarChart(){
@@ -79,6 +86,19 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics){
                 val totalCalories = "${it}kcal"
                 tvTotalCalories.text = totalCalories
              }
+        })
+
+        viewModel.runShortedByDate.observe(viewLifecycleOwner, Observer {
+            it?.let{
+                val allAvgSpeeds = it.indices.map{ i -> BarEntry(i.toFloat(),it[i].avgSpeedInKMH)}
+                val barDataSet = BarDataSet(allAvgSpeeds,"Avg Speed Over Time").apply {
+                    valueTextColor = Color.WHITE
+                    color = ContextCompat.getColor(requireContext(),R.color.colorAccent)
+                }
+                barChart.data = BarData(barDataSet)
+                barChart.marker = CustomMarkerView(it.reversed(),requireContext(),R.layout.marker_view)
+                barChart.invalidate()
+            }
         })
     }
 }

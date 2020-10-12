@@ -125,18 +125,11 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking){
         return super.onOptionsItemSelected(item)
     }
     private fun showCancelTrackingDialog(){
-        val dialog = MaterialAlertDialogBuilder(requireContext(),R.style.AlertDialogTheme)
-            .setTitle("Cancel the run?")
-            .setMessage("Are you are sure to cancel the current run and delete all its data??")
-            .setIcon(R.drawable.ic_delete)
-            .setPositiveButton("Yes"){ _, _ ->
+       CancelTrackingDialog().apply{
+           setYesListener {
                 stopRun()
-            }
-            .setNegativeButton("No"){ dialogInterface,_ ->
-                dialogInterface.cancel()
-            }
-            .create()
-        dialog.show()
+           }
+       }.show(parentFragmentManager,null)
     }
 
     private fun stopRun() {
